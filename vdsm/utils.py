@@ -39,6 +39,7 @@ import fcntl
 import functools
 import stat
 import glob
+import re
 
 import ethtool
 
@@ -573,7 +574,9 @@ class HostStatsThread(StatsThread):
                              [''] * len(ifids))  # fake ifmacs
         self._imagesStatus = ImagePathStatus(cif)
         self._pid = os.getpid()
-        self._ncpus = len(os.listdir('/sys/class/cpuid/'))
+        cpuPattern = re.compile('cpu[0-9]+')
+        self._ncpus = len(filter(cpuPattern.match,
+                          os.listdir('/sys/devices/system/cpu')))
 
     def stop(self):
         self._imagesStatus.stop()

@@ -89,6 +89,7 @@ log = logging.getLogger("Storage.Multipath")
 _scsi_id = utils.CommandPath("scsi_id",
                              "/sbin/scsi_id",  # EL6
                              "/usr/lib/udev/scsi_id",  # Fedora
+                             "/lib/udev/scsi_id",  # Ubuntu
                              )
 
 
@@ -173,11 +174,11 @@ def setupMultipath():
     # Flush all unused multipath device maps
     misc.execCmd([constants.EXT_MULTIPATH, "-F"], sudo=True)
 
-    cmd = [constants.EXT_SERVICE, "multipathd", "restart"]
+    cmd = [constants.EXT_SERVICE, "multipath-tools", "restart"]
     rc = misc.execCmd(cmd, sudo=True)[0]
     if rc != 0:
         # No dice - try to reload instead of restart
-        cmd = [constants.EXT_SERVICE, "multipathd", "reload"]
+        cmd = [constants.EXT_SERVICE, "multipath-tools", "reload"]
         rc = misc.execCmd(cmd, sudo=True)[0]
         if rc != 0:
             raise se.MultipathRestartError()

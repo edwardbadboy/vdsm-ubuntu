@@ -58,7 +58,7 @@ def readableBy(filePath, user):
 def kernelBootImages():
     kernelVer = os.uname()[2]
     kernelPath = "/boot/vmlinuz-" + kernelVer
-    initramfsPath = "/boot/initramfs-%s.img" % kernelVer
+    initramfsPath = "/boot/initrd.img-" + kernelVer
 
     if not os.path.isfile(kernelPath):
         raise SkipTest("Can not locate kernel image for release %s" %
@@ -297,7 +297,7 @@ class XMLRPCTest(TestCaseBase):
             r = self.s.spmStart(poolid, -1, -1, -1, 0)
             self.assertVdsOK(r)
             tid = r['uuid']
-            self._waitTask(tid)
+            self._waitTask(tid, timeout=60)
             undo = lambda poolid=poolid: \
                 self.assertVdsOK(self.s.destroyStoragePool(
                     poolid, storagePools[poolid]['host'], 'scsiKey'))
@@ -340,14 +340,14 @@ class XMLRPCTest(TestCaseBase):
                                 sdid, poolid, imgid, [volid])['uuid'])
                     rollback.prependDefer(undo)
 
-    def _waitTask(self, taskId):
+    def _waitTask(self, taskId, timeout=20):
         def assertTaskOK():
             r = self.s.getTaskStatus(taskId)
             self.assertVdsOK(r)
             state = r['taskStatus']['taskState']
             self.assertEquals(state, 'finished')
 
-        self.retryAssert(assertTaskOK, timeout=20)
+        self.retryAssert(assertTaskOK, timeout=timeout)
 
 
 class BackendServer(object):

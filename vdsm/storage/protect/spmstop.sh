@@ -71,7 +71,7 @@ for ((i=0; i<10; i+=1)); do
 done
 
 if [[ "$killed_len" != "$spmprotect_pgrps_len" ]]; then
-    $KILL -9 $spmprotect_pgrps
+    $KILL -9 -- $spmprotect_pgrps
 fi
 
 exit 0

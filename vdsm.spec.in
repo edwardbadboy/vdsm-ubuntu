@@ -434,8 +434,8 @@ install -Dm 0755 vdsm/respawn \
                  %{buildroot}%{_datadir}/%{vdsm_name}/respawn
 
 # Install the lvm rules
-install -Dm 0644 vdsm/storage/12-vdsm-lvm.rules \
-                 %{buildroot}/lib/udev/rules.d/12-vdsm-lvm.rules
+install -Dm 0644 vdsm/storage/86-vdsm-lvm.rules \
+                 %{buildroot}/lib/udev/rules.d/86-vdsm-lvm.rules
 
 install -Dm 0644 vdsm/limits.conf \
                  %{buildroot}/etc/security/limits.d/99-vdsm.conf
@@ -752,7 +752,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/gluster/exception.py*
 %{_datadir}/%{vdsm_name}/gluster/hostname.py*
 %{python_sitelib}/sos/plugins/vdsm.py*
-/lib/udev/rules.d/12-vdsm-lvm.rules
+/lib/udev/rules.d/86-vdsm-lvm.rules
 /etc/security/limits.d/99-vdsm.conf
 %{_mandir}/man8/vdsmd.8*
 %if 0%{?rhel}

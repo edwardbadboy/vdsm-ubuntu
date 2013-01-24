@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 #
 # Copyright 2006-2010 Red Hat, Inc. and/or its affiliates.
 #
@@ -33,7 +33,7 @@ CORE_DUMP_PATH=/var/log/core/core.%p.%t.dump
 DOM_METADATA_BACKUP_DIR=/var/log/vdsm/backup
 CORE_PATTERN=/proc/sys/kernel/core_pattern
 QEMU_DUMP_PATH="/var/log/core"
-NEEDED_SERVICES="iscsid multipathd ntpd wdmd sanlock network"
+NEEDED_SERVICES="open-iscsi multipath-tools ntp wdmd sanlock networking"
 CONFLICTING_SERVICES="libvirt-guests"
 
 # trigger for reconfiguration
@@ -41,7 +41,7 @@ FORCE_RECONFIGURE=@VDSMLIBDIR@/reconfigure
 
 LCONF=/etc/libvirt/libvirtd.conf
 QCONF=/etc/libvirt/qemu.conf
-LDCONF=/etc/sysconfig/libvirtd
+LDCONF=/etc/libvirt/libvirtd.conf
 QLCONF=/etc/libvirt/qemu-sanlock.conf
 
 is_coredump=`$GETCONFITEM $CONF_FILE vars core_dump_enable false | tr A-Z a-z`
@@ -49,7 +49,14 @@ is_coredump=`$GETCONFITEM $CONF_FILE vars core_dump_enable false | tr A-Z a-z`
 
 SYSTEMCTL_SKIP_REDIRECT=true
 
-. /etc/init.d/functions
+. /lib/lsb/init-functions
+
+failure() {
+	:
+}
+success() {
+	:
+}
 
 log_failure_msg() { echo -n "$@"; failure "$@"; echo; }
 log_success_msg() { echo -n "$@"; success "$@"; echo; }
@@ -122,13 +129,13 @@ shutdown_conflicting_srv() {
 
     for srv in $CONFLICTING_SERVICES
     do
-        /sbin/chkconfig $srv off
-        if /sbin/service $srv status > /dev/null 2>&1;
+        /usr/sbin/update-rc.d $srv disable
+        if /usr/sbin/service $srv status > /dev/null 2>&1;
         then
             if [ "$srv" == "libvirt-guests" ]; then
                 /bin/rm -f /var/lock/subsys/libvirt-guests
             else
-                /sbin/service $srv stop
+                /usr/sbin/service $srv stop
             fi
         fi
     done
@@ -145,10 +152,10 @@ start_needed_srv() {
 
     for srv in $NEEDED_SERVICES
     do
-        if ! /sbin/service $srv status > /dev/null 2>&1;
+        if ! /usr/sbin/service $srv status > /dev/null 2>&1;
         then
             echo "Starting $srv..."
-            /sbin/service $srv start
+            /usr/sbin/service $srv start
             ret_val=$?
             if [ $ret_val -ne 0 ]
             then
@@ -158,7 +165,7 @@ start_needed_srv() {
         fi
     done
 
-    /sbin/service iscsid force-start
+    #/usr/sbin/service open-iscsi force-start
 }
 
 test_lo() {
@@ -216,7 +223,7 @@ configure_libvirt()
     # Remove configuration created by vdsm (old "# by vdsm" and the new format)
     # Argument: configuration file that will be inspected
     remove_vdsm_conf() {
-        sed -i --copy -e "/${start_conf_section}/,/${end_conf_section}/d" \
+        sed -i -e "/${start_conf_section}/,/${end_conf_section}/d" \
             -e "/$by_vdsm/d" "$@"
     }
 
@@ -363,7 +370,7 @@ EOF
     ovirt_store_config "$lconf" "$qconf" "$ldconf" "$llogr"
 
     if libvirt_should_use_upstart; then
-        /sbin/initctl restart libvirtd 2>/dev/null || :
+        /sbin/initctl restart libvirt-bin 2>/dev/null || :
     else
         /bin/systemctl restart libvirtd.service
     fi
@@ -397,9 +404,9 @@ reconfigure() {
 stop_libvirtd_sysv() {
     # stop libvirt SysV service if we intend to configure upstart
 
-    if libvirt_should_use_upstart && ! [[ -f /etc/init/libvirtd.conf ]]; then
-        /sbin/chkconfig libvirtd off
-        /sbin/service libvirtd stop
+    if libvirt_should_use_upstart && ! [[ -f /etc/init/libvirt-bin.conf ]]; then
+        /usr/sbin/update-rc.d libvirt-bin disable
+        /usr/sbin/service libvirt-bin stop
     fi
 }
 
@@ -408,13 +415,14 @@ start_libvirtd() {
     local startout
 
     if ! libvirt_should_use_upstart; then
-        /sbin/service libvirtd start
+        /usr/sbin/service libvirt-bin start
         return
     fi
 
-    packaged=`/bin/rpm -ql libvirt libvirt-daemon | \
+	# in fact there is no sample libvirtd.upstart or any equivalent in Ubuntu libvirt packages
+    packaged=`/usr/bin/dpkg-query --listfiles libvirt-bin libvirt0 | \
               /bin/grep libvirtd.upstart | /usr/bin/tail -1`
-    target=/etc/init/libvirtd.conf
+    target=/etc/init/libvirt-bin.conf
 
     if [[ -f "$packaged" ]] && ! diff -q "$packaged" "$target" >/dev/null;
     then
@@ -422,7 +430,7 @@ start_libvirtd() {
         /sbin/initctl reload-configuration
     fi
 
-    startout=`/sbin/initctl start libvirtd 2>&1`
+    startout=`/sbin/initctl start libvirt-bin 2>&1`
     if [[ "$?" -eq 0 || "$startout" =~ .*already\ running.* ]];
     then
         return 0
@@ -499,7 +507,7 @@ start() {
 
     LIBVIRT_LOG_FILTERS=`$GETCONFITEM $CONF_FILE vars libvirt_log_filters "1:libvirt 1:remote"` \
     LIBVIRT_LOG_OUTPUTS=`$GETCONFITEM $CONF_FILE vars libvirt_log_outputs "1:file:/var/log/vdsm/libvirt.log"` \
-    LC_ALL=C NICELEVEL=$vdsm_nice daemon --user=vdsm @VDSMDIR@/respawn --minlifetime 10 --daemon --masterpid $RESPAWNPIDFILE $VDSM_BIN
+    LC_ALL=C NICELEVEL=$vdsm_nice start_daemon -n $vdsm_nice -- /usr/bin/sudo -u vdsm @VDSMDIR@/respawn --minlifetime 10 --daemon --masterpid $RESPAWNPIDFILE $VDSM_BIN
     RETVAL=$?
     [ "$RETVAL" -eq 0 ] && log_success_msg $"$prog start" || log_failure_msg $"$prog start"
     [ "$RETVAL" -eq 0 ] && touch /var/lock/subsys/vdsmd
