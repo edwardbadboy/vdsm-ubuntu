@@ -67,17 +67,34 @@ def readableBy(filePath, user):
 @contextmanager
 def kernelBootImages():
     kernelVer = os.uname()[2]
-    kernelPath = "/boot/vmlinuz-" + kernelVer
-    initramfsPath = "/boot/initramfs-%s.img" % kernelVer
+    kernelPaths = ["/boot/vmlinuz-" + kernelVer,  # Fedora, RHEL
+                   ]
+    initramfsPaths = ["/boot/initramfs-%s.img" % kernelVer,  # Fedora, RHEL
+                      "/boot/initrd.img-" + kernelVer,  # Ubuntu
+                      ]
 
-    if not os.path.isfile(kernelPath):
+    kernelPaths = filter(os.path.isfile, kernelPaths)
+    try:
+        kernelPath = kernelPaths[0]
+    except IndexError:
         raise SkipTest("Can not locate kernel image for release %s" %
                        kernelVer)
+
     if not readableBy(kernelPath, QEMU_PROCESS_USER):
         raise SkipTest("qemu process can not read the file %s" % kernelPath)
 
-    if os.path.isfile(initramfsPath):
-        # There is an initramfs shipped with the distro, try use it
+    initramfsPaths = filter(os.path.isfile, initramfsPaths)
+    try:
+        # If there is an initramfs shipped with the distro, try use it
+        initramfsPath = initramfsPaths[0]
+    except IndexError:
+        # Generate an initramfs on demand, use it, delete it
+        initramfsPath = genInitramfs(kernelVer)
+        try:
+            yield (kernelPath, initramfsPath)
+        finally:
+            os.unlink(initramfsPath)
+    else:
         if not readableBy(initramfsPath, QEMU_PROCESS_USER):
             raise SkipTest("qemu process can not read the file %s" %
                            initramfsPath)
@@ -85,13 +102,6 @@ def kernelBootImages():
             yield (kernelPath, initramfsPath)
         finally:
             pass
-    else:
-        # Generate an initramfs on demand, use it, delete it
-        initramfsPath = genInitramfs(kernelVer)
-        try:
-            yield (kernelPath, initramfsPath)
-        finally:
-            os.unlink(initramfsPath)
 
 
 def genInitramfs(kernelVer):
