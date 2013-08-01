@@ -78,13 +78,17 @@ nodist_noinst_DATA = \
 	sudoers.vdsm \
 	supervdsmd.init \
 	supervdsmd.service \
+	supervdsmd.upstart \
 	svdsm.logger.conf \
 	vdsm-logrotate.conf \
 	vdsm-restore-net-config.init \
+	vdsm-restore-net-config.upstart \
 	vdsm-tmpfiles.d.conf \
+	vdsm-tmpfiles.upstart \
 	vdsm.rwtab \
 	vdsmd.init \
 	vdsmd.service \
+	vdsmd.upstart \
 	$(NULL)
 
 dist_vdsm_SCRIPTS = \
@@ -127,6 +131,7 @@ EXTRA_DIST = \
 	sudoers.vdsm.in \
 	supervdsmd.init.in \
 	supervdsmd.service.in \
+	supervdsmd.upstart.in \
 	svdsm.logger.conf.in \
 	vdsm-gencerts.sh.in \
 	vdsm-libvirt-access.pkla \
@@ -137,13 +142,16 @@ EXTRA_DIST = \
 	vdsm-modules-load.d.conf \
 	vdsm-restore-net-config.init.in \
 	vdsm-restore-net-config.service \
+	vdsm-restore-net-config.upstart.in \
 	vdsm-store-net-config.in \
 	vdsm-sysctl.conf \
 	vdsm-tmpfiles.d.conf.in \
+	vdsm-tmpfiles.upstart.in \
 	vdsm.rwtab.in \
 	vdsmd.8.in \
 	vdsmd.init.in \
 	vdsmd.service.in \
+	vdsmd.upstart.in \
 	vdsmd_init_common.sh.in \
 	$(NULL)
 

@@ -1,0 +1,24 @@
+# vdsm-tmpfiles - Automatically create tempfiles under /var/run for vdsm
+#
+
+description "Automatically create tempfiles under /var/run for vdsm"
+
+start on startup
+console log
+
+task
+
+script
+while read Type Path Mode User Group ; do
+    if [ ! -e "$Path" ]; then
+        if [ "$Type" = "d" ]; then
+            @MKDIR_P@ "$Path"
+        else
+            echo "Type $Type handling is not implemented"
+            exit 1
+        fi
+    fi
+    "@CHOWN_PATH@" $User:$Group "$Path"
+    "@CHMOD_PATH@" $Mode "$Path"
+done < "@VDSMDIR@/vdsm-tmpfiles.d.conf"
+end script
