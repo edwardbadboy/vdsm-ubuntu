@@ -25,7 +25,7 @@ VDSM_CONF_FILE="@CONFDIR@/vdsm.conf"
 QEMU_DUMP_PATH="/var/log/core"
 LCONF="@sysconfdir@/libvirt/libvirtd.conf"
 QCONF="@sysconfdir@/libvirt/qemu.conf"
-LDCONF="@sysconfdir@/sysconfig/libvirtd"
+LDCONF="@sysconfdir@/default/libvirt-bin"
 QLCONF="@sysconfdir@/libvirt/qemu-sanlock.conf"
 
 # trigger for reconfiguration
@@ -213,6 +213,8 @@ configure() {
     set_if_default "${ldconf}" LIBVIRTD_ARGS --listen
     set_if_default "${ldconf}" DAEMON_COREFILE_LIMIT unlimited
     set_if_default "${qconf}" save_image_format \"lzop\"
+    set_if_default "${qconf}" user \"@QEMUUSER@\"
+    set_if_default "${qconf}" group \"@QEMUGROUP@\"
     # FIXME until we are confident with libvirt integration, let us have a verbose log
     set_if_default "${lconf}" log_outputs \"1:file:/var/log/libvirt/libvirtd.log\"
     set_if_default "${lconf}" log_filters "\"3:virobject 3:virfile 2:virnetlink \
