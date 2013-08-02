@@ -580,8 +580,14 @@ def IPv4toMapped(ip):
 def getIfaceByIP(ip):
     for info in ethtool.get_interfaces_info(ethtool.get_active_devices()):
 
-        for ipv4addr in info.get_ipv4_addresses():
-            if ip == ipv4addr.address or ip == IPv4toMapped(ipv4addr.address):
+        if hasattr(info, 'get_ipv4_addresses'):
+            for ipv4addr in info.get_ipv4_addresses():
+                if ip == ipv4addr.address or \
+                   ip == IPv4toMapped(ipv4addr.address):
+                    return info.device
+        else:
+            if ip == info.ipv4_address or \
+               ip == IPv4toMapped(info.ipv4_address):
                 return info.device
 
         for ipv6addr in info.get_ipv6_addresses():
