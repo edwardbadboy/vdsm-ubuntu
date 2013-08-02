@@ -11,6 +11,8 @@ nice -20
 respawn
 
 pre-start script
+    "@BINDIR@/vdsm-tool" load-needed-modules
+    "@BINDIR@/vdsm-tool" service-restart wdmd
     "@LIBEXECDIR@/vdsmd_init_common.sh" --start-needed-srv "ntp open-iscsi multipath-tools wdmd sanlock portmap libvirt-bin supervdsmd"
     "@LIBEXECDIR@/vdsmd_init_common.sh" --pre-start
 end script
